@@ -26,7 +26,7 @@ A single, self-contained HTML file that converts d8 dice rolls into BIP39 mnemon
 *Select your seed length, type d8 rolls (space-separated), and watch the live counter turn green when enough rolls are entered.*
 
 ### 2. Generated Seed Words
-![Seed Words](photos/screenshots-words.jpg)
+![Seed Words](photos/screenshot-words.jpg)
 *Your BIP39 mnemonic appears in a clean, numbered list for safe, easy transcription.*
 
 ### 3. Raw Entropy (Hex)
