@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BIP39 Dice Roll Seed Generator</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      color: #eaeaea;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #f0a500;
+      text-align: center;
+      border-bottom: 2px solid #f0a500;
+      padding-bottom: 10px;
+    }
+    .container {
+      background: #16213e;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #d4d4d4;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #0f3460;
+      color: #fff;
+      font-size: 1.1rem;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+    button {
+      background: #f0a500;
+      color: #1a1a2e;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #ffc107;
+      transform: scale(1.02);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: #533483;
+      color: #fff;
+    }
+    button.secondary:hover {
+      background: #6a4c9c;
+    }
+    .output-area {
+      background: #0a0a1a;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      border: 1px solid #333;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: #8be9fd;
+    }
+    .output-area .label {
+      color: #aaa;
+      font-weight: bold;
+      font-family: 'Segoe UI', sans-serif;
+      margin-bottom: 8px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .row button {
+      margin-top: 0;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+    .copy-btn {
+      background: #3b82f6;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .copy-btn:hover {
+      background: #2563eb;
+    }
+    .wordlist-status {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .wordlist-status.pass {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .wordlist-status.fail {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #ef4444;
+    }
+    small {
+      color: #888;
+      display: block;
+      margin-top: 5px;
+    }
+    .flex {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #diceInput {
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>
+  <svg width="42" height="47" viewBox="0 0 52 58" role="img" aria-label="d8"
+       style="vertical-align:middle;">
+    <polygon points="26,1 50,15 50,43 26,57 2,43 2,15"
+             fill="#0f3460" stroke="#f0a500" stroke-width="2"/>
+    <polygon points="26,1 50,43 2,43"
+             fill="none" stroke="#f0a500" stroke-width="2"/>
+    <text x="26" y="36" font-size="18" font-weight="bold" fill="#f0a500"
+          text-anchor="middle" font-family="sans-serif">8</text>
+  </svg>
+  BIP39 D8 Octal Seed
+</h1>
+
+<div class="container">
+  <p><strong>Enter your dice rolls</strong> (e.g., <code>12345678</code> for a single roll, or multiple rolls separated by spaces).</p>
+  <p>Select your desired seed length below, then enter enough dice rolls to match.</p>
+
+  <label for="wordCount">Desired Seed Length:</label>
+  <select id="wordCount" style="width:100%; padding:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:#fff; font-size:1.1rem; margin-top:5px; box-sizing:border-box;">
+ <option value="12">12 words (128-bit entropy, 43 d8 rolls)</option>
+    <option value="15">15 words (160-bit entropy, 54 d8 rolls)</option>
+    <option value="18">18 words (192-bit entropy, 64 d8 rolls)</option>
+    <option value="21">21 words (224-bit entropy, 75 d8 rolls)</option>
+    <option value="24" selected>24 words (256-bit entropy, 86 d8 rolls)</option>
+  </select>
+
+  <label for="diceInput" style="margin-top:18px;">Dice Rolls (1-8, no other numbers):</label>
+  <input type="text" id="diceInput" inputmode="numeric" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="e.g., 12345678...">
+
+  <div id="rollCounter" style="margin-top:8px; font-size:0.95rem; color:#aaa;">
+    🎲 <strong>0</strong> rolls entered — need <strong>104</strong> more for 24 words
+  </div>
+
+  <div class="flex" style="margin-top:10px;">
+    <button id="generateBtn">🔮 Generate Seed</button>
+    <button id="clearDiceBtn" class="secondary">✖ Clear Rolls</button>
+  </div>
+
+  <div id="wordlistStatus" class="wordlist-status">⏳ Checking wordlist...</div>
+</div>
+
+<div class="container" id="resultsContainer" style="display:none;">
+  <h2 style="color:#f0a500; margin-top:0;">Recovery Phrase</h2>
+  <div id="mnemonicOutput" class="output-area">
+    <div class="label">📝 Your Seed Words</div>
+    <div id="mnemonicText">(generated here)</div>
+    <div style="margin-top:10px;">
+      <button class="copy-btn" id="copyMnemonicBtn">📋 Copy Phrase</button>
+    </div>
+  </div>
+
+  <h2 style="color:#f0a500;">BIP39 Entropy (Hex)</h2>
+  <div class="output-area">
+    <div class="label">🔐 Raw Entropy</div>
+    <div id="entropyText">(hex will appear here)</div>
+    <div style="margin-top:10px;">
+      <button class="copy-btn" id="copyEntropyBtn">📋 Copy Hex</button>
+    </div>
+  </div>
+
+  <p><small>This entropy is the raw randomness used to derive your seed phrase. Keep it secret.</small></p>
+</div>
+
+<script>
+// ============================================================
+// OFFICIAL BIP39 WORDLIST (2048 words, sorted alphabetically)
+// ============================================================
+const WORDLIST = [
+  "abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse",
+  "access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act",
+  "action","actor","actress","actual","adapt","add","addict","address","adjust","admit",
+  "adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent",
+  "agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert",
+  "alien","all","alley","allow","almost","alone","alpha","already","also","alter",
+  "always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger",
+  "angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique",
+  "anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic",
+  "area","arena","argue","arm","armed","armor","army","around","arrange","arrest",
+  "arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset",
+  "assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction",
+  "audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake",
+  "aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge",
+  "bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain",
+  "barrel","base","basic","basket","battle","beach","bean","beauty","because","become",
+  "beef","before","begin","behave","behind","believe","below","belt","bench","benefit",
+  "best","betray","better","between","beyond","bicycle","bid","bike","bind","biology",
+  "bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless",
+  "blind","blood","blossom","blouse","blue","blur","blush","board","boat","body",
+  "boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss",
+  "bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread",
+  "breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze",
+  "broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb",
+  "bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy",
+  "butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call",
+  "calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas",
+  "canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry",
+  "cart","case","cash","casino","castle","casual","cat","catalog","catch","category",
+  "cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century",
+  "cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase",
+  "chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child",
+  "chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle",
+  "citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk",
+  "clever","click","client","cliff","climb","clinic","clip","clock","clog","close",
+  "cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut",
+  "code","coffee","coil","coin","collect","color","column","combine","come","comfort",
+  "comic","common","company","concert","conduct","confirm","congress","connect","consider","control",
+  "convince","cook","cool","copper","copy","coral","core","corn","correct","cost",
+  "cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle",
+  "craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek",
+  "crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial",
+  "cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup",
+  "cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad",
+  "damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal",
+  "debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense",
+  "define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny",
+  "depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk",
+  "despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond",
+  "diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur",
+  "direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance",
+  "divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain",
+  "donate","donkey","donor","door","dose","double","dove","draft","dragon","drama",
+  "drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop",
+  "drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf",
+  "dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo",
+  "ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow",
+  "elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody",
+  "embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless",
+  "endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough",
+  "enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip",
+  "era","erase","erode","erosion","error","erupt","escape","essay","essence","estate",
+  "eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange",
+  "excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit",
+  "exotic","expand","expect","expire","explain","expose","express","extend","extra","eye",
+  "eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame",
+  "family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father",
+  "fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female",
+  "fence","festival","fetch","fever","few","fiber","fiction","field","figure","file",
+  "film","filter","final","find","fine","finger","finish","fire","firm","first",
+  "fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor",
+  "flee","flight","flip","float","flock","floor","flower","fluid","flush","fly",
+  "foam","focus","fog","foil","fold","follow","food","foot","force","forest",
+  "forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile",
+  "frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen",
+  "fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy",
+  "gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp",
+  "gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture",
+  "ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance",
+  "glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue",
+  "goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown",
+  "grab","grace","grain","grant","grape","grass","gravity","great","green","grid",
+  "grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt",
+  "guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy",
+  "harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health",
+  "heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden",
+  "high","hill","hint","hip","hire","history","hobby","hockey","hold","hole",
+  "holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital",
+  "host","hotel","hour","hover","hub","huge","human","humble","humor","hundred",
+  "hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea",
+  "identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune",
+  "impact","impose","improve","impulse","inch","include","income","increase","index","indicate",
+  "indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury",
+  "inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install",
+  "intact","interest","into","invest","invite","involve","iron","island","isolate","issue",
+  "item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel",
+  "job","join","joke","journey","joy","judge","juice","jump","jungle","junior",
+  "junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney",
+  "kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife",
+  "knock","know","lab","label","labor","ladder","lady","lake","lamp","language",
+  "laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit",
+  "layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal",
+  "legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level",
+  "liar","liberty","library","license","life","lift","light","like","limb","limit",
+  "link","lion","liquid","list","little","live","lizard","load","loan","lobster",
+  "local","lock","logic","lonely","long","loop","lottery","loud","lounge","love",
+  "loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad",
+  "magic","magnet","maid","mail","main","major","make","mammal","man","manage",
+  "mandate","mango","mansion","manual","maple","marble","march","margin","marine","market",
+  "marriage","mask","mass","master","match","material","math","matrix","matter","maximum",
+  "maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt",
+  "member","memory","mention","menu","mercy","merge","merit","merry","mesh","message",
+  "metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor",
+  "minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile",
+  "model","modify","mom","moment","monitor","monkey","monster","month","moon","moral",
+  "more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie",
+  "much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual",
+  "myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature",
+  "near","neck","need","negative","neglect","neither","nephew","nerve","nest","net",
+  "network","neutral","never","news","next","nice","night","noble","noise","nominee",
+  "noodle","normal","north","nose","notable","note","nothing","notice","novel","now",
+  "nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe",
+  "obtain","obvious","occur","ocean","october","odor","off","offer","office","often",
+  "oil","okay","old","olive","olympic","omit","once","one","onion","online",
+  "only","open","opera","opinion","oppose","option","orange","orbit","orchard","order",
+  "ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output",
+  "outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact",
+  "paddle","page","pair","palace","palm","panda","panel","panic","panther","paper",
+  "parade","parent","park","parrot","party","pass","patch","path","patient","patrol",
+  "pattern","pause","pave","payment","peace","peanut","pear","peasant","pelican","pen",
+  "penalty","pencil","people","pepper","perfect","permit","person","pet","phone","photo",
+  "phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot",
+  "pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate",
+  "play","please","pledge","pluck","plug","plunge","poem","poet","point","polar",
+  "pole","police","pond","pony","pool","popular","portion","position","possible","post",
+  "potato","pottery","poverty","powder","power","practice","praise","predict","prefer","prepare",
+  "present","pretty","prevent","price","pride","primary","print","priority","prison","private",
+  "prize","problem","process","produce","profit","program","project","promote","proof","property",
+  "prosper","protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin",
+  "punch","pupil","puppy","purchase","purity","purpose","purse","push","put","puzzle",
+  "pyramid","quality","quantum","quarter","question","quick","quit","quiz","quote","rabbit",
+  "raccoon","race","rack","radar","radio","rail","rain","raise","rally","ramp",
+  "ranch","random","range","rapid","rare","rate","rather","raven","raw","razor",
+  "ready","real","reason","rebel","rebuild","recall","receive","recipe","record","recycle",
+  "reduce","reflect","reform","refuse","region","regret","regular","reject","relax","release",
+  "relief","rely","remain","remember","remind","remove","render","renew","rent","reopen",
+  "repair","repeat","replace","report","require","rescue","resemble","resist","resource","response",
+  "result","retire","retreat","return","reunion","reveal","review","reward","rhythm","rib",
+  "ribbon","rice","rich","ride","ridge","rifle","right","rigid","ring","riot",
+  "ripple","risk","ritual","rival","river","road","roast","robot","robust","rocket",
+  "romance","roof","rookie","room","rose","rotate","rough","round","route","royal",
+  "rubber","rude","rug","rule","run","runway","rural","sad","saddle","sadness",
+  "safe","sail","salad","salmon","salon","salt","salute","same","sample","sand",
+  "satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare","scatter",
+  "scene","scheme","school","science","scissors","scorpion","scout","scrap","screen","script",
+  "scrub","sea","search","season","seat","second","secret","section","security","seed",
+  "seek","segment","select","sell","seminar","senior","sense","sentence","series","service",
+  "session","settle","setup","seven","shadow","shaft","shallow","share","shed","shell",
+  "sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot","shop",
+  "short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side",
+  "siege","sight","sign","silent","silk","silly","silver","similar","simple","since",
+  "sing","siren","sister","situate","six","size","skate","sketch","ski","skill",
+  "skin","skirt","skull","slab","slam","sleep","slender","slice","slide","slight",
+  "slim","slogan","slot","slow","slush","small","smart","smile","smoke","smooth",
+  "snack","snake","snap","sniff","snow","soap","soccer","social","sock","soda",
+  "soft","solar","soldier","solid","solution","solve","someone","song","soon","sorry",
+  "sort","soul","sound","soup","source","south","space","spare","spatial","spawn",
+  "speak","special","speed","spell","spend","sphere","spice","spider","spike","spin",
+  "spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread","spring",
+  "spy","square","squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp",
+  "stand","start","state","stay","steak","steel","stem","step","stereo","stick",
+  "still","sting","stock","stomach","stone","stool","story","stove","strategy","street",
+  "strike","strong","struggle","student","stuff","stumble","style","subject","submit","subway",
+  "success","such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny",
+  "sunset","super","supply","supreme","sure","surface","surge","surprise","surround","survey",
+  "suspect","sustain","swallow","swamp","swap","swarm","swear","sweet","swift","swim",
+  "swing","switch","sword","symbol","symptom","syrup","system","table","tackle","tag",
+  "tail","talent","talk","tank","tape","target","task","taste","tattoo","taxi",
+  "teach","team","tell","ten","tenant","tennis","tent","term","test","text",
+  "thank","that","theme","then","theory","there","they","thing","this","thought",
+  "three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber",
+  "time","tiny","tip","tired","tissue","title","toast","tobacco","today","toddler",
+  "toe","together","toilet","token","tomato","tomorrow","tone","tongue","tonight","tool",
+  "tooth","top","topic","topple","torch","tornado","tortoise","toss","total","tourist",
+  "toward","tower","town","toy","track","trade","traffic","tragic","train","transfer",
+  "trap","trash","travel","tray","treat","tree","trend","trial","tribe","trick",
+  "trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet","trust",
+  "truth","try","tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle",
+  "twelve","twenty","twice","twin","twist","two","type","typical","ugly","umbrella",
+  "unable","unaware","uncle","uncover","under","undo","unfair","unfold","unhappy","uniform",
+  "unique","unit","universe","unknown","unlock","until","unusual","unveil","update","upgrade",
+  "uphold","upon","upper","upset","urban","urge","usage","use","used","useful",
+  "useless","usual","utility","vacant","vacuum","vague","valid","valley","valve","van",
+  "vanish","vapor","various","vast","vault","vehicle","velvet","vendor","venture","venue",
+  "verb","verify","version","very","vessel","veteran","viable","vibrant","vicious","victory",
+  "video","view","village","vintage","violin","virtual","virus","visa","visit","visual",
+  "vital","vivid","vocal","voice","void","volcano","volume","vote","voyage","wage",
+  "wagon","wait","walk","wall","walnut","want","warfare","warm","warrior","wash",
+  "wasp","waste","water","wave","way","wealth","weapon","wear","weasel","weather",
+  "web","wedding","weekend","weird","welcome","west","wet","whale","what","wheat",
+  "wheel","when","where","whip","whisper","wide","width","wife","wild","will",
+  "win","window","wine","wing","wink","winner","winter","wire","wisdom","wise",
+  "wish","witness","wolf","woman","wonder","wood","wool","word","work","world",
+  "worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year",
+  "yellow","you","young","youth","zebra","zero","zone","zoo"
+];
+
+// ============================================================
+// WORDLIST INTEGRITY CHECK (automatic on load)
+// ============================================================
+const WORDLIST_SHA256 = '187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae';
+
+const WORDLIST_CHECK = (async function verifyWordlist() {
+  let pass = true;
+  let msg = '';
+
+  if (WORDLIST.length !== 2048) {
+    pass = false;
+    msg += `Length is ${WORDLIST.length}, expected 2048. `;
+  }
+
+  const sorted = [...WORDLIST].sort();
+  for (let i = 0; i < WORDLIST.length; i++) {
+    if (WORDLIST[i] !== sorted[i]) {
+      pass = false;
+      msg += 'Wordlist is not sorted. ';
+      break;
+    }
+  }
+
+  const checks = {
+    0: 'abandon',
+    1: 'ability',
+    103: 'artefact',
+    174: 'beyond',
+    544: 'dune',
+    829: 'guilt',
+    1169: 'mutual',
+    1978: 'warrior',
+    2047: 'zoo'
+  };
+  for (const [idx, expected] of Object.entries(checks)) {
+    if (WORDLIST[idx] !== expected) {
+      pass = false;
+      msg += `Index ${idx} is ${WORDLIST[idx]}, expected ${expected}. `;
+    }
+  }
+
+  if (pass) {
+    try {
+      const canonical = WORDLIST.join('\n');
+      const bytes = new TextEncoder().encode(canonical);
+      const hashBuffer = await sha256(bytes);
+      const hashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      if (hashHex !== WORDLIST_SHA256) {
+        pass = false;
+        msg += `Hash mismatch (got ${hashHex}). A word may be added, deleted, or misspelled. `;
+      }
+    } catch (e) {
+      pass = false;
+      msg += `Hash computation failed: ${e.message}. `;
+    }
+  }
+
+  const box = document.getElementById('wordlistStatus');
+  box.classList.remove('pass', 'fail');
+  box.classList.add(pass ? 'pass' : 'fail');
+  box.textContent = pass
+    ? '✅ Wordlist integrity verified: 2048 words, sorted, key words match, full hash valid.'
+    : '❌ Wordlist integrity check failed: ' + msg;
+    if (!pass) {
+    const btn = document.getElementById('generateBtn');
+    if (btn) btn.disabled = true;
+  }
+  return pass;
+})();
+
+
+
+// ============================================================
+// FALLBACK SHA-256 (pure JS, for non-secure contexts like file://)
+// ============================================================
+function sha256Fallback(message) {
+  function rotr(n, x) { return (x >>> n) | (x << (32 - n)); }
+  function shr(n, x) { return x >>> n; }
+  function ch(x, y, z) { return (x & y) ^ (~x & z); }
+  function maj(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); }
+  function ep0(x) { return rotr(2, x) ^ rotr(13, x) ^ rotr(22, x); }
+  function ep1(x) { return rotr(6, x) ^ rotr(11, x) ^ rotr(25, x); }
+  function sig0(x) { return rotr(7, x) ^ rotr(18, x) ^ shr(3, x); }
+  function sig1(x) { return rotr(17, x) ^ rotr(19, x) ^ shr(10, x); }
+
+  var K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+
+  var H = [
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+  ];
+
+  var msg = [];
+  for (var i = 0; i < message.length; i++) {
+    msg.push(message[i]);
+  }
+
+  var bitLen = msg.length * 8;
+  msg.push(0x80);
+  while ((msg.length * 8 + 64) % 512 !== 0) msg.push(0);
+  // Encode 64-bit big-endian message length.
+  // JavaScript bitwise ops are 32-bit, so we split the length into
+  // high and low 32-bit halves manually. For messages under ~512 MB
+  // the high 32 bits are always zero.
+  var bitLenHigh = 0; // Math.floor(bitLen / 0x100000000) — always 0 for practical inputs
+  var bitLenLow = bitLen >>> 0;
+  msg.push((bitLenHigh >>> 24) & 0xff);
+  msg.push((bitLenHigh >>> 16) & 0xff);
+  msg.push((bitLenHigh >>> 8) & 0xff);
+  msg.push(bitLenHigh & 0xff);
+  msg.push((bitLenLow >>> 24) & 0xff);
+  msg.push((bitLenLow >>> 16) & 0xff);
+  msg.push((bitLenLow >>> 8) & 0xff);
+  msg.push(bitLenLow & 0xff);
+
+  for (var i = 0; i < msg.length; i += 64) {
+    var w = [];
+    for (var t = 0; t < 16; t++) {
+      w[t] = (msg[i + t * 4] << 24) | (msg[i + t * 4 + 1] << 16) | (msg[i + t * 4 + 2] << 8) | msg[i + t * 4 + 3];
+    }
+    for (var t = 16; t < 64; t++) {
+      w[t] = (sig1(w[t - 2]) + w[t - 7] + sig0(w[t - 15]) + w[t - 16]) >>> 0;
+    }
+
+    var a = H[0], b = H[1], c = H[2], d = H[3];
+    var e = H[4], f = H[5], g = H[6], h = H[7];
+
+    for (var t = 0; t < 64; t++) {
+      var T1 = (h + ep1(e) + ch(e, f, g) + K[t] + w[t]) >>> 0;
+      var T2 = (ep0(a) + maj(a, b, c)) >>> 0;
+      h = g; g = f; f = e; e = (d + T1) >>> 0;
+      d = c; c = b; b = a; a = (T1 + T2) >>> 0;
+    }
+
+    H[0] = (H[0] + a) >>> 0;
+    H[1] = (H[1] + b) >>> 0;
+    H[2] = (H[2] + c) >>> 0;
+    H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0;
+    H[5] = (H[5] + f) >>> 0;
+    H[6] = (H[6] + g) >>> 0;
+    H[7] = (H[7] + h) >>> 0;
+  }
+
+  var hash = [];
+  for (var i = 0; i < 8; i++) {
+    hash.push((H[i] >>> 24) & 0xff);
+    hash.push((H[i] >>> 16) & 0xff);
+    hash.push((H[i] >>> 8) & 0xff);
+    hash.push(H[i] & 0xff);
+  }
+  return new Uint8Array(hash);
+}
+
+function sha256(bytes) {
+  if (typeof crypto !== 'undefined' && crypto.subtle && typeof crypto.subtle.digest === 'function') {
+    return crypto.subtle.digest('SHA-256', bytes);
+  }
+  return new Promise(function(resolve) {
+    resolve(sha256Fallback(Array.from(bytes)));
+  });
+}
+
+// ============================================================
+// BIP39 GENERATION LOGIC
+// ============================================================
+function entropyToMnemonic(entropyHex) {
+  const bits = entropyHex.match(/.{2}/g).map(b => parseInt(b, 16).toString(2).padStart(8, '0')).join('');
+  const checksumBits = bits.length / 32;
+  return new Promise((resolve, reject) => {
+    const bytes = new Uint8Array(entropyHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    sha256(bytes).then(hash => {
+      const hashBits = Array.from(new Uint8Array(hash)).map(b => b.toString(2).padStart(8, '0')).join('');
+      const checksum = hashBits.slice(0, checksumBits);
+      const fullBits = bits + checksum;
+      const words = [];
+      for (let i = 0; i < fullBits.length; i += 11) {
+        const chunk = fullBits.slice(i, i + 11);
+        if (chunk.length < 11) break;
+        const idx = parseInt(chunk, 2);
+        words.push(WORDLIST[idx]);
+      }
+      resolve(words);
+    }).catch(reject);
+  });
+}
+
+/**
+ * Convert d8 rolls to entropy hex.
+ * Each die face (1-8) maps to an octal digit (0-7) = exactly 3 bits.
+ * We concatenate the 3-bit groups and keep the low targetBits bits,
+ * which is perfectly uniform because 8^N = 2^(3N).
+ */
+function rollsToEntropy(rollString, requiredBytes) {
+  const rolls = rollString.replace(/[^1-8]/g, '').split('')
+    .map(Number).map(n => n - 1);            // d8 faces 1–8 → octal 0–7
+  if (rolls.length === 0) return '';
+  const targetBits = requiredBytes * 8;
+  const bits = rolls.map(d => d.toString(2).padStart(3, '0')).join('');
+  const used = bits.slice(-targetBits);      // low bits: perfectly uniform
+  return used.match(/.{8}/g)
+    .map(b => parseInt(b, 2).toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ============================================================
+// UI LOGIC (Complete Merged Version)
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  const diceInput = document.getElementById('diceInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const clearDiceBtn = document.getElementById('clearDiceBtn');
+  const resultsContainer = document.getElementById('resultsContainer');
+  const mnemonicText = document.getElementById('mnemonicText');
+  const entropyText = document.getElementById('entropyText');
+  const copyMnemonicBtn = document.getElementById('copyMnemonicBtn');
+  const copyEntropyBtn = document.getElementById('copyEntropyBtn');
+  const wordCountSelect = document.getElementById('wordCount');
+  const rollCounter = document.getElementById('rollCounter');
+
+  // Closure-scoped state
+  let currentMnemonic = [];
+  let currentEntropy = '';
+
+  const REQUIRED_BYTES = {12: 16, 15: 20, 18: 24, 21: 28, 24: 32};
+ const REQUIRED_ROLLS = {
+    12: 43,   // 129 bits raw for 128-bit target (3 bits per d8 roll)
+    15: 54,   // 162 bits raw for 160-bit target
+    18: 64,   // 192 bits raw for 192-bit target (exact fit)
+    21: 75,   // 225 bits raw for 224-bit target
+    24: 86    // 258 bits raw for 256-bit target
+  };
+
+  function updateCounter() {
+    const raw = diceInput.value;
+    const rolls = raw.replace(/[^1-8]/g, '').length;
+    const selectedWords = parseInt(wordCountSelect.value, 10);
+    const requiredRolls = REQUIRED_ROLLS[selectedWords];
+    const remaining = Math.max(0, requiredRolls - rolls);
+    const color = rolls >= requiredRolls ? '#6ee7b7' : (rolls >= requiredRolls * 0.8 ? '#f0a500' : '#fca5a5');
+
+    if (rolls >= requiredRolls) {
+      rollCounter.innerHTML = `🎲 <strong style="color:${color}">${rolls}</strong> rolls entered — <strong style="color:#6ee7b7;">✅ Optimal inputs reached! Press "Generate" button.</strong>`;
+    } else {
+      rollCounter.innerHTML = `🎲 <strong style="color:${color}">${rolls}</strong> rolls entered — need <strong>${remaining}</strong> more for ${selectedWords} words`;
+    }
+  }
+
+  // 1. Lock typing when exact required roll count is reached
+  diceInput.addEventListener('keydown', function(e) {
+    const selectedWords = parseInt(wordCountSelect.value, 10);
+    const requiredRolls = REQUIRED_ROLLS[selectedWords];
+    const currentRolls = diceInput.value.replace(/[^1-8]/g, '').length;
+
+    const navigationKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'];
+    const isShortcut = e.ctrlKey || e.metaKey;
+
+    if (e.key === 'Enter') {
+      generateBtn.click();
+      return;
+    }
+
+    if (currentRolls >= requiredRolls && !navigationKeys.includes(e.key) && !isShortcut) {
+      e.preventDefault();
+    }
+  });
+
+  // 2. Truncate long paste entries and enforce strict numeric bounds
+  diceInput.addEventListener('input', function() {
+    const selectedWords = parseInt(wordCountSelect.value, 10);
+    const requiredRolls = REQUIRED_ROLLS[selectedWords];
+    let clean = diceInput.value.replace(/[^1-8]/g, '');
+
+    if (clean.length > requiredRolls) {
+      diceInput.value = clean.slice(0, requiredRolls);
+    } else if (diceInput.value !== clean) {
+      diceInput.value = clean;
+    }
+
+    updateCounter();
+  });
+
+  // 3. Auto-adjust input string length if dropdown changes to a smaller word target
+  wordCountSelect.addEventListener('change', function() {
+    const selectedWords = parseInt(wordCountSelect.value, 10);
+    const requiredRolls = REQUIRED_ROLLS[selectedWords];
+    let clean = diceInput.value.replace(/[^1-8]/g, '');
+
+    if (clean.length > requiredRolls) {
+      diceInput.value = clean.slice(0, requiredRolls);
+    }
+    updateCounter();
+  });
+
+  updateCounter();
+
+  generateBtn.addEventListener('click', async function() {
+      if (!(await WORDLIST_CHECK)) {
+      alert('⛔ Wordlist integrity check failed. Refusing to generate a seed.');
+      return;
+    }
+    const raw = diceInput.value;
+    if (!raw.trim()) {
+      alert('Please enter some dice rolls first.');
+      return;
+    }
+    const selectedWords = parseInt(wordCountSelect.value, 10);
+    const requiredBytes = REQUIRED_BYTES[selectedWords];
+    const requiredRolls = REQUIRED_ROLLS[selectedWords];
+    const rollCount = raw.replace(/[^1-8]/g, '').length;
+
+    if (rollCount < requiredRolls) {
+      alert('Not enough entropy for ' + selectedWords + ' words. You need at least ' + requiredRolls + ' dice rolls (you have ' + rollCount + ').');
+      return;
+    }
+
+    try {
+      const entropy = await rollsToEntropy(raw, requiredBytes);
+      currentEntropy = entropy;
+      const words = await entropyToMnemonic(entropy);
+      currentMnemonic = words;
+
+      let display = '';
+      words.forEach((w, i) => {
+        display += `${i+1}. ${w}\n`;
+      });
+      mnemonicText.textContent = display;
+      entropyText.textContent = entropy;
+      resultsContainer.style.display = 'block';
+    } catch (err) {
+      alert('Error generating seed: ' + err.message);
+    }
+  });
+
+  clearDiceBtn.addEventListener('click', function() {
+    diceInput.value = '';
+    resultsContainer.style.display = 'none';
+    mnemonicText.textContent = '';
+    entropyText.textContent = '';
+    currentMnemonic = [];
+    currentEntropy = '';
+    updateCounter();
+  });
+
+  // Hard reset integration
+  const hardResetBtn = document.getElementById('hardResetBtn');
+  if (hardResetBtn) {
+    hardResetBtn.addEventListener('click', function() {
+      currentMnemonic = [];
+      currentEntropy = '';
+      if (typeof window.hardReset === 'function') window.hardReset();
+    });
+  }
+
+  // Clipboard functionality
+  async function copyText(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(`✅ ${label} copied to clipboard!`);
+    } catch (err) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = [
+          'position: fixed', 'top: 0', 'left: 0', 'width: 1px', 'height: 1px',
+          'padding: 0', 'border: none', 'outline: none', 'box-shadow: none',
+          'background: transparent', 'opacity: 0.01', 'pointer-events: none', 'z-index: -1'
+        ].join(';');
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        const success = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (success) {
+          alert(`✅ ${label} copied to clipboard!`);
+        } else {
+          alert('❌ Copy failed. Please copy manually.');
+        }
+      } catch (fallbackErr) {
+        alert('❌ Copy failed. Please copy manually.');
+      }
+    }
+  }
+
+  copyMnemonicBtn.addEventListener('click', function() {
+    if (!currentMnemonic || currentMnemonic.length === 0) {
+      alert('No seed phrase generated yet.');
+      return;
+    }
+    copyText(currentMnemonic.join(' '), 'Seed phrase');
+  });
+
+  copyEntropyBtn.addEventListener('click', function() {
+    if (!currentEntropy) {
+      alert('No entropy generated yet.');
+      return;
+    }
+    copyText(currentEntropy, 'Entropy hex');
+  });
+});
+
+
+
+</script>
+
+<!-- ====== HARDENED RESET BUTTON (UI) ====== -->
+<style>
+  #hardResetBtn {
+    background: #d9534f;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 30px;
+    display: inline-block;
+    transition: background 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  #hardResetBtn:hover {
+    background: #c9302c;
+  }
+  #hardResetBtn:active {
+    transform: scale(0.97);
+  }
+  .reset-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    padding: 8px 14px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    display: none;
+  }
+</style>
+
+<div style="text-align: center; margin: 20px 0;">
+  <button id="hardResetBtn">🧹 Clear / Reset (Wipe Memory)</button>
+  <div id="resetFeedback" class="reset-warning">✅ Memory state cleared. Inputs and variables nullified.</div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  window.hardReset = function() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea');
+    inputs.forEach(function(el) {
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // Only clear the content divs, never the outer .output-area containers
+    const outputs = document.querySelectorAll('#mnemonicText, #entropyText');
+    outputs.forEach(function(el) {
+      el.textContent = '';
+    });
+
+    const container = document.getElementById('resultsContainer');
+    if (container) container.style.display = 'none';
+
+    // NOTE: currentMnemonic and currentEntropy are closure-scoped (not window globals)
+    // and are cleared by the main DOMContentLoaded handler above.
+    var globalsToWipe = [
+      'mnemonic', 'entropy', 'bits', 'seed', 'rolls',
+      'diceEntropy', 'hexString', 'byteArray', 'wordArray', 'generatedMnemonic', 'entropyHex'
+    ];
+    globalsToWipe.forEach(function(varName) {
+      if (window.hasOwnProperty(varName)) {
+        try {
+          if (varName === 'currentMnemonic') window[varName] = [];
+          else if (varName === 'currentEntropy') window[varName] = '';
+          else window[varName] = null;
+        } catch(e) { /* ignore */ }
+      }
+    });
+
+    if (typeof window.reset === 'function') window.reset();
+    if (typeof window.clearAll === 'function') window.clearAll();
+
+    document.querySelectorAll('.error, .warning, .alert').forEach(function(el) {
+      el.textContent = '';
+      el.style.display = 'none';
+    });
+
+    if (window.location.hash) {
+      history.replaceState(null, null, ' ');
+    }
+
+    var feedback = document.getElementById('resetFeedback');
+    if (feedback) {
+      feedback.style.display = 'block';
+      setTimeout(function() {
+        feedback.style.display = 'none';
+      }, 3000);
+    }
+
+    console.log('🧹 Hard reset complete. Memory state nullified.');
+  };
+
+  // NOTE: The click listener for #hardResetBtn is attached exclusively in the
+  // main DOMContentLoaded handler above. That handler clears the closure-scoped
+  // currentMnemonic / currentEntropy values and then calls window.hardReset(),
+  // so attaching a second listener here would run the reset twice per click.
+})();
+</script>
+<!-- ====== END RESET BUTTON ====== -->
+
+</body>
+</html>
