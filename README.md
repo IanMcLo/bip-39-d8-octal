@@ -62,12 +62,14 @@ A single, self-contained HTML file that converts d8 dice rolls into BIP39 mnemon
    Each roll (1-8) is mapped to an octal digit (0-7). The full sequence is concatenated and parsed as a base-8 integer, then expanded to binary (3 bits per digit).
 
 2. **Trim to exact entropy size**
-   The raw bitstream is truncated by discarding 1–2 excess least-significant bits to match the required entropy length:
+   The raw bitstream is truncated by discarding 1–2 excess most-significant bits to match the required entropy length:
    * **12 words** → 128 bits (16 bytes, 43 rolls, trim 1 bit)
    * **15 words** → 160 bits (20 bytes, 54 rolls, trim 2 bits)
    * **18 words** → 192 bits (24 bytes, 64 rolls, **zero trim**)
    * **21 words** → 224 bits (28 bytes, 75 rolls, trim 1 bit)
    * **24 words** → 256 bits (32 bytes, 86 rolls, trim 2 bits)
+
+> **Note on Bit Surplus:** Because a d8 yields exactly 3 bits per roll, the total raw bits occasionally exceed the exact target (e.g., 43 rolls = 129 bits for a 12-word seed). The tool handles this by keeping the least-significant (rightmost) bits and discarding the excess most-significant (leftmost) bits. Because 8⁴³ (2¹²⁹) is an exact multiple of 2¹²⁸, this mathematical trimming is perfectly uniform and introduces **zero modulo bias**.
 
 3. **Append BIP39 checksum**
    SHA-256 of the entropy — first N bits become the checksum.
