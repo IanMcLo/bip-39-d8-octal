@@ -426,7 +426,32 @@ const WORDLIST = [
 // WORDLIST INTEGRITY CHECK (automatic on load)
 // ============================================================
 const WORDLIST_SHA256 = '187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae';
+// ============================================================
+// KNOWN-ANSWER TEST VECTORS (authoritative sources, verbatim)
+// SHA-256: FIPS-180 examples. BIP-39: official spec vectors.
+// ============================================================
+const SHA256_KATS = [
+  { bytes: [],
+    hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' },
+  { bytes: [0x61, 0x62, 0x63],
+    hash: 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad' }
+];
 
+const BIP39_KATS = [
+  { hex: '00000000000000000000000000000000',
+    mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' },
+  { hex: '80808080808080808080808080808080',
+    mnemonic: 'letter advice cage absurd amount doctor acoustic avoid letter advice cage above' },
+  { hex: 'ffffffffffffffffffffffffffffffff',
+    mnemonic: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong' },
+  { hex: '0000000000000000000000000000000000000000000000000000000000000000',
+    mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art' }
+];
+
+// D8 REPO keeps this line:
+const ROLLS_KAT = { rolls: '3115121131151211311512113115121131151211311', hex: '80808080808080808080808080808080' };
+// D6 REPO keeps this line instead:
+// const ROLLS_KAT = { rolls: '43' + '1'.repeat(52), hex: '3bf055a1d9eaf0429540000000000000' };
 const WORDLIST_CHECK = (async function verifyWordlist() {
   let pass = true;
   let msg = '';
@@ -481,13 +506,40 @@ const WORDLIST_CHECK = (async function verifyWordlist() {
       msg += `Hash computation failed: ${e.message}. `;
     }
   }
+// ---- Self-test: pure-JS SHA-256 fallback ----
+  for (const k of SHA256_KATS) {
+    const h = Array.from(sha256Fallback(k.bytes))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    if (h !== k.hash) { pass = false; msg += 'SHA-256 fallback KAT failed. '; }
+  }
 
+  // ---- Self-test: live sha256() wrapper ----
+  try {
+    const h = Array.from(new Uint8Array(await sha256(new Uint8Array([0x61, 0x62, 0x63]))))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    if (h !== SHA256_KATS[1].hash) { pass = false; msg += 'sha256() wrapper KAT failed. '; }
+  } catch (e) { pass = false; msg += 'sha256() KAT error: ' + e.message + '. '; }
+
+  // ---- Self-test: rolls -> entropy packing & trim ----
+  if (rollsToEntropy(ROLLS_KAT.rolls, 16) !== ROLLS_KAT.hex) {
+    pass = false; msg += 'Rolls-to-entropy KAT failed. ';
+  }
+
+  // ---- Self-test: entropy -> mnemonic pipeline (checksum + slicing) ----
+  for (const k of BIP39_KATS) {
+    try {
+      const words = await entropyToMnemonic(k.hex);
+      if (words.join(' ') !== k.mnemonic) {
+        pass = false; msg += 'BIP-39 vector failed for ' + k.hex.slice(0, 8) + '…. ';
+      }
+    } catch (e) { pass = false; msg += 'BIP-39 KAT error: ' + e.message + '. '; }
+  }
   const box = document.getElementById('wordlistStatus');
   box.classList.remove('pass', 'fail');
   box.classList.add(pass ? 'pass' : 'fail');
   box.textContent = pass
-    ? '✅ Wordlist integrity verified: 2048 words, sorted, key words match, full hash valid.'
-    : '❌ Wordlist integrity check failed: ' + msg;
+    ? '✅ Wordlist + self-tests verified: 2048 words, SHA-256 KATs, rolls→entropy KAT, and 4/4 official BIP-39 vectors pass.'
+    : '❌ Integrity check failed: ' + msg;
     if (!pass) {
     const btn = document.getElementById('generateBtn');
     if (btn) btn.disabled = true;
