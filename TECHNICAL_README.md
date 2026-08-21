@@ -132,7 +132,7 @@ For the d8 pipeline:
 
 $$N = 8^k = 2^{3k}, \qquad R = 2^{b}, \qquad 3k \ge b$$
 
-Since 2^{3k} is an exact power of two:
+Since $2^{3k}$ is an exact power of two:
 
 $$r = N \bmod R = 0, \qquad q = N / R = 2^{3k-b} \in \mathbb{Z}$$
 
@@ -146,7 +146,7 @@ $$\epsilon = \frac{\lceil N/R \rceil - \lfloor N/R \rfloor}{N} = 0, \qquad \Delt
 - **12 words:** N = 8⁴³ = 2¹²⁹, R = 2¹²⁸ → q = 2, Δ = 0.
 - **24 words:** N = 8⁸⁶ = 2²⁵⁸, R = 2²⁵⁶ → q = 4, Δ = 0.
 
-Contrast: a base-6 source has 6^k ≠ 2^b for all k, b, so d6 tools must
+Contrast: a base-6 source has $6^k ≠ 2^b$ for all k, b, so d6 tools must
 *bound* bias via over-sampling (≈ 2⁻¹³ TVD at their roll counts). The d8
 pipeline needs no such argument — uniformity is structural, not
 asymptotic. The surplus bits s ∈ {0, 1, 2} in §2.1 exist purely for
@@ -155,15 +155,15 @@ mitigate.
 
 ---
 
-## 6. Why Trimming Left (Lower-Order Bits) is Mathematically Sound
+## 6. Why Keeping the Low-Order Bits (Trimming Left) is Mathematically Sound
 
 The implementation keeps the low-order bits via
 `bits.slice(-targetBits)`, i.e. computes
 
 $$X \bmod 2^{b}$$
 
-for X uniform over [0, 2^{3k}). Because 2^b | 2^{3k}, each residue class
-has exactly 2^{3k-b} preimages, so the retained bits are **exactly
+for X uniform over $[0, 2^{3k})$. Because $2^b | 2^{3k}$, each residue class
+has exactly $2^{3k-b}$ preimages, so the retained bits are **exactly
 uniform** — the trim is lossless in distribution.
 
 Operationally: the first roll's 3-bit group supplies the most
