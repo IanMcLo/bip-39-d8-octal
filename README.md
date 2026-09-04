@@ -104,6 +104,16 @@ Use this tool on an **air-gapped** device only.
 - The file contains **no external scripts, no analytics, and no network calls**.
 - All computation happens locally in your browser via the Web Crypto API with a **pure-JS SHA-256 fallback** for non-secure contexts (`file://`, HTTP).
 
+  ## Provenance & Signed Releases
+
+Release tags (September 2026 onward) are signed with the account SSH
+signing key — the same key covers all of IanMcLo's repositories.
+
+Fingerprint (SHA256): `6D+lcVxQsXH+3QK+x6luF5L7tdjajExZSKGJQuPcqZo`
+
+Verify: `git verify-tag <tag> --show-signature`
+Full scope & reporting policy: see SECURITY.md.
+
 ---
 
 ## ⚠️ Verification & Compatibility
