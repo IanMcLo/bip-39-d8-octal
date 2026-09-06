@@ -247,36 +247,25 @@ The generator stores mnemonic and entropy in closure-scoped variables
 
 ---
 
-## 11. Worked Example — 12 words (43 rolls)
-
-This example maps a 43-roll sequence to raw entropy hex and a BIP-39
-mnemonic under the v1.0.0 octal bit-packing ordering. The result
-coincides with the official BIP-39 test vector for entropy
-`0x8080...80`, providing an independent cross-check.
+## 11. Worked Example 
 
 ### Example Parameters
-* **Target:** 12 words (E = 128 bits, 16 bytes), k = 43 rolls.
-* **Roll sequence (43):**
-  `3` followed by the block `1, 1, 5, 1, 2` repeated 8 times, ending with `1, 2`.
-  Full sequence:
-  `3 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 1 5 1 2 1 2`
+
+- **Target:** 12 words (E = 128 bits, 16 bytes), k = 43 rolls.
+- **Roll sequence (43):** the block `3,1,1,5,1,2,1,1` repeated 5 times, followed by `3,1,1`.
+Full sequence:
+`3 1 1 5 1 2 1 1 3 1 1 5 1 2 1 1 3 1 1 5 1 2 1 1 3 1 1 5 1 2 1 1 3 1 1 5 1 2 1 1 3 1 1`
 
 ### Step-by-Step Conversion
 
-1. **Map faces to octal digits (digit = face − 1):**
-   `2` followed by the block `0, 0, 4, 0, 1` repeated 8 times, ending with `0, 1`.
-
-2. **Expand digits to 3-bit groups (MSB-first per roll):**
-   `010` followed by `000 000 100 000 001` repeated 8 times, ending with `000 001`.
-   (129 bits total)
-
-3. **Assemble the 129-bit integer (unpadded hex, 33 chars):**
-   $$X = \texttt{0x080808080808080808080808080808080}$$
-   (The leading `0` is the surplus bit s = 1, contributed by the first
-   face `3` = `010`.)
-
-4. **Trim to target precision (keep low 128 bits):**
+1. **Map faces to octal digits (digit = face − 1):** the block `2,0,0,4,0,1,0,0` repeated 5 times, followed by `2,0,0`.
+2. **Expand digits to 3-bit groups (MSB-first per roll), 129 bits total.**
+3. **Trim to target precision (keep low 128 bits):**
    $$\text{Raw Entropy Hex} = \texttt{80808080808080808080808080808080}$$
+4. **Checksum & word slicing** proceeds exactly as before.
+5. **Verification Output:**
+   - **Raw Entropy Hex:** `80808080808080808080808080808080`
+   - **Generated Mnemonic:** `letter advice cage absurd amount doctor acoustic avoid letter advice cage above`
 
 5. **Checksum & word slicing:**
    * SHA-256(raw entropy) → first CS = 4 checksum bits = `0100`.
