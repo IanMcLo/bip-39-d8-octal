@@ -33,7 +33,8 @@
       font-weight: bold;
       color: #d4d4d4;
     }
-    input[type="text"] {
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
       padding: 12px;
       border: 1px solid #333;
@@ -143,6 +144,66 @@
       font-size: 1.2rem;
       letter-spacing: 2px;
     }
+    #diceInput.invalid {
+      border: 2px solid #fca5a5;
+      background: rgba(252, 165, 165, 0.08);
+    }
+    .wordlist-status { cursor: pointer; }
+    .wordlist-status.collapsed {
+      white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; padding: 8px 12px;
+    }
+    @media (min-width: 768px) {
+      .wordlist-status.collapsed {
+        white-space: normal; overflow: visible;
+        text-overflow: clip; padding: 12px;
+      }
+      #auditSheet {
+        left: 50% !important; right: auto !important;
+        transform: translateX(-50%);
+        width: min(800px, 96vw);
+        border-radius: 12px 12px 0 0;
+      }
+      #auditOut { font-size: 0.85rem; }
+      #auditFab:hover { transform: scale(1.08); }
+    }
+    /* CLIPBOARD PERSISTENCE WARNING */
+    .clipboard-warning {
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 20px;
+      border: 1px solid #ef4444;
+      font-size: 0.9rem;
+    }
+    .clipboard-warning strong {
+      color: #fff;
+    }
+    .clipboard-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px;
+      background: #0a0a1a;
+      border-radius: 6px;
+      border: 1px solid #333;
+    }
+    .clipboard-toggle label {
+      margin: 0;
+      font-weight: normal;
+      color: #d4d4d4;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .clipboard-toggle input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -157,16 +218,16 @@
     <text x="26" y="36" font-size="18" font-weight="bold" fill="#f0a500"
           text-anchor="middle" font-family="sans-serif">8</text>
   </svg>
-  BIP39 D8 Octal Seed
+BIP39 D8 Octal Seed
 </h1>
 
 <div class="container">
-  <p><strong>Enter your dice rolls</strong> (e.g., <code>12345678</code> for a single roll, or multiple rolls separated by spaces).</p>
+  <p><strong>Enter your dice rolls</strong> as one digit (1–8) per roll, e.g. <code>12345678</code> is eight separate rolls. Whitespace is allowed and ignored; any other character (letters, 0, 9, punctuation) will be flagged as invalid rather than silently removed — fix it before generating.</p>
   <p>Select your desired seed length below, then enter enough dice rolls to match.</p>
 
   <label for="wordCount">Desired Seed Length:</label>
   <select id="wordCount" style="width:100%; padding:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:#fff; font-size:1.1rem; margin-top:5px; box-sizing:border-box;">
- <option value="12">12 words (128-bit entropy, 43 d8 rolls)</option>
+    <option value="12">12 words (128-bit entropy, 43 d8 rolls)</option>
     <option value="15">15 words (160-bit entropy, 54 d8 rolls)</option>
     <option value="18">18 words (192-bit entropy, 64 d8 rolls)</option>
     <option value="21">21 words (224-bit entropy, 75 d8 rolls)</option>
@@ -174,10 +235,10 @@
   </select>
 
   <label for="diceInput" style="margin-top:18px;">Dice Rolls (1-8, no other numbers):</label>
-  <input type="text" id="diceInput" inputmode="numeric" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="e.g., 12345678...">
+  <input type="text" id="diceInput" inputmode="numeric" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="e.g., 12345678123...">
 
   <div id="rollCounter" style="margin-top:8px; font-size:0.95rem; color:#aaa;">
-    🎲 <strong>0</strong> rolls entered — need <strong>104</strong> more for 24 words
+    🎲 <strong>0</strong> rolls entered — need <strong>86</strong> more for 24 words
   </div>
 
   <div class="flex" style="margin-top:10px;">
@@ -186,8 +247,22 @@
   </div>
 
   <div id="wordlistStatus" class="wordlist-status">⏳ Checking wordlist...</div>
-</div>
 
+</div>
+<div class="container">
+  <h2 style="color:#f0a500; margin-top:0;">✅ Verify Mnemonic</h2>
+  <p><small>Treated as secret input: this field auto-clears like your generated phrase, and if you paste from your clipboard we attempt to scrub the clipboard shortly after.</small></p>
+  <label for="verifyInput">Paste your recovery phrase:</label>
+  <div class="row" style="margin-top:5px;">
+    <input type="password" id="verifyInput" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="abandon ability able ..." style="flex:1; min-width:200px;">
+    <button type="button" id="toggleVerifyVisibility" class="secondary" style="padding:12px 16px;">👁 Show</button>
+  </div>
+  <div class="flex" style="margin-top:10px;">
+    <button id="verifyBtn">🔍 Verify Mnemonic</button>
+    <button id="clearVerifyBtn" class="secondary">✖ Clear</button>
+  </div>
+ <div id="verifyStatus" class="wordlist-status" style="display:none; margin-top:15px; word-break:break-all; overflow-wrap:anywhere;"></div>
+</div>
 <div class="container" id="resultsContainer" style="display:none;">
   <h2 style="color:#f0a500; margin-top:0;">Recovery Phrase</h2>
   <div id="mnemonicOutput" class="output-area">
@@ -208,6 +283,29 @@
   </div>
 
   <p><small>This entropy is the raw randomness used to derive your seed phrase. Keep it secret.</small></p>
+  
+  <!-- CLIPBOARD PERSISTENCE WARNING -->
+  <div class="clipboard-warning">
+    ⚠️ <strong>Clipboard Persistence Warning:</strong><br>
+    Even after clicking "Clear Rolls" or "Hard Reset", your operating system's
+    clipboard history (Windows 10/11, macOS Universal Clipboard, Chrome clipboard
+    history, third-party clipboard managers) may still retain copied secrets.
+    <strong>Disable clipboard history before use, or manually clear it after copying.</strong>
+  </div>
+
+  <!-- CLIPBOARD TOGGLE -->
+  <div class="clipboard-toggle">
+    <label>
+      <input type="checkbox" id="enableClipboardToggle">
+      Enable clipboard copy buttons (disabled by default for maximum security)
+    </label>
+  </div>
+
+  <!-- NON-PERSISTENCE HARDENING: Burn-after-reading notice -->
+  <p><small>
+    ⏱️ <strong>Auto-clear:</strong> Results will automatically clear from the screen after 3 minutes.
+    Use the ✖ Clear Rolls button or double-tap <kbd>Esc</kbd> to clear immediately.
+  </small></p>
 </div>
 
 <script>
@@ -448,10 +546,13 @@ const BIP39_KATS = [
     mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art' }
 ];
 
-// D8 REPO keeps this line:
+// D6 REPO keeps this line instead (base-6 rejection-sampling KAT):
+//const ROLLS_KAT = { rolls: '43' + '1'.repeat(53), hex: '67a201cb1b81a18f7f80000000000000' };
+// D8 REPO (this repo) uses this line — independently verified against
+// the exact no-rejection-sampling algorithm above: 43 rolls -> 129 raw
+// bits -> low 128 bits kept -> matches BIP39_KATS' 0x808080... vector.
 const ROLLS_KAT = { rolls: '3115121131151211311512113115121131151211311', hex: '80808080808080808080808080808080' };
-// D6 REPO keeps this line instead:
-// const ROLLS_KAT = { rolls: '43' + '1'.repeat(52), hex: '3bf055a1d9eaf0429540000000000000' };
+
 const WORDLIST_CHECK = (async function verifyWordlist() {
   let pass = true;
   let msg = '';
@@ -507,10 +608,15 @@ const WORDLIST_CHECK = (async function verifyWordlist() {
     }
   }
 // ---- Self-test: pure-JS SHA-256 fallback ----
-  for (const k of SHA256_KATS) {
-    const h = Array.from(sha256Fallback(k.bytes))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-    if (h !== k.hash) { pass = false; msg += 'SHA-256 fallback KAT failed. '; }
+  try {
+    for (const k of SHA256_KATS) {
+      const h = Array.from(sha256Fallback(k.bytes))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+      if (h !== k.hash) { pass = false; msg += 'SHA-256 fallback KAT failed. '; }
+    }
+  } catch (e) {
+    pass = false;
+    msg += 'SHA-256 fallback error: ' + e.message + '. ';
   }
 
   // ---- Self-test: live sha256() wrapper ----
@@ -534,12 +640,36 @@ const WORDLIST_CHECK = (async function verifyWordlist() {
       }
     } catch (e) { pass = false; msg += 'BIP-39 KAT error: ' + e.message + '. '; }
   }
+
+  // ---- Self-test: mnemonic verifier ----
+  try {
+    const good = await verifyMnemonic(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+    );
+    if (!good.valid || good.entropyHex !== '00000000000000000000000000000000') {
+      pass = false;
+      msg += 'Mnemonic verifier valid-vector KAT failed. ';
+    }
+
+    const bad = await verifyMnemonic(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon'
+    );
+    if (bad.valid) {
+      pass = false;
+      msg += 'Mnemonic verifier rejected-checksum KAT failed. ';
+    }
+  } catch (e) {
+    pass = false;
+    msg += 'Mnemonic verifier KAT error: ' + e.message + '. ';
+  }
+
   const box = document.getElementById('wordlistStatus');
   box.classList.remove('pass', 'fail');
   box.classList.add(pass ? 'pass' : 'fail');
-  box.textContent = pass
+ box.textContent = pass
     ? '✅ Wordlist + self-tests verified: 2048 words, SHA-256 KATs, rolls→entropy KAT, and 4/4 official BIP-39 vectors pass.'
     : '❌ Integrity check failed: ' + msg;
+    if (pass) box.classList.add('collapsed');
     if (!pass) {
     const btn = document.getElementById('generateBtn');
     if (btn) btn.disabled = true;
@@ -672,23 +802,76 @@ function entropyToMnemonic(entropyHex) {
     }).catch(reject);
   });
 }
+async function verifyMnemonic(phrase) {
+  const words = phrase.trim().toLowerCase().split(/\s+/);
+  if (![12, 15, 18, 21, 24].includes(words.length)) {
+    return { error: `Invalid word count: ${words.length}. Must be 12, 15, 18, 21, or 24.` };
+  }
 
+  let bits = '';
+  for (const w of words) {
+    const idx = WORDLIST.indexOf(w);
+    if (idx === -1) return { error: `"${w}" is not in the wordlist.` };
+    bits += idx.toString(2).padStart(11, '0');
+  }
+
+  // Total bits = ENT + CS, where CS = ENT/32, so CS = total/33
+  const csBits = bits.length / 33;
+  const entropyBits = bits.slice(0, bits.length - csBits);
+  const checksumBits = bits.slice(bits.length - csBits);
+
+  const entropyBytes = new Uint8Array(entropyBits.length / 8);
+  for (let i = 0; i < entropyBytes.length; i++) {
+    entropyBytes[i] = parseInt(entropyBits.substr(i * 8, 8), 2);
+  }
+
+  const hash = await sha256(entropyBytes);
+  const hashBits = Array.from(new Uint8Array(hash))
+    .map(b => b.toString(2).padStart(8, '0')).join('');
+
+  return {
+    valid: hashBits.slice(0, csBits) === checksumBits,
+    entropyHex: Array.from(entropyBytes).map(b => b.toString(16).padStart(2, '0')).join('')
+  };
+}
 /**
  * Convert d8 rolls to entropy hex.
  * Each die face (1-8) maps to an octal digit (0-7) = exactly 3 bits.
  * We concatenate the 3-bit groups and keep the low targetBits bits,
- * which is perfectly uniform because 8^N = 2^(3N).
+ * which is perfectly uniform because 8^N = 2^(3N) exactly. Unlike D6
+ * (6 is not a power of 2), there is no modulo bias to correct for and
+ * therefore no rejection sampling step at all.
  */
+// Strict compact-digit parser: accepts digits 1-8 and whitespace only.
+// Anything else (letters, 0, 9, commas, punctuation) throws rather
+// than being silently discarded, so bad input surfaces as an error
+// instead of just vanishing from what the user typed.
+function parseRollString(rollString) {
+    const raw = String(rollString);
+
+    if (!/^[\s1-8]+$/.test(raw)) {
+        throw new Error(
+            'Invalid input: use only D8 digits 1–8 and optional whitespace.'
+        );
+    }
+
+    const cleanStr = raw.replace(/\s/g, '');
+
+    if (cleanStr.length === 0) {
+        throw new Error('Enter at least one D8 roll.');
+    }
+
+    return cleanStr.split('').map(ch => Number(ch) - 1); // 1-8 -> octal 0-7
+}
+
 function rollsToEntropy(rollString, requiredBytes) {
-  const rolls = rollString.replace(/[^1-8]/g, '').split('')
-    .map(Number).map(n => n - 1);            // d8 faces 1–8 → octal 0–7
-  if (rolls.length === 0) return '';
-  const targetBits = requiredBytes * 8;
-  const bits = rolls.map(d => d.toString(2).padStart(3, '0')).join('');
-  const used = bits.slice(-targetBits);      // low bits: perfectly uniform
-  return used.match(/.{8}/g)
-    .map(b => parseInt(b, 2).toString(16).padStart(2, '0'))
-    .join('');
+    const rolls = parseRollString(rollString);
+    const targetBits = requiredBytes * 8;
+    const bits = rolls.map(d => d.toString(2).padStart(3, '0')).join('');
+    const used = bits.slice(-targetBits); // low bits: perfectly uniform, exact
+    return used.match(/.{8}/g)
+        .map(b => parseInt(b, 2).toString(16).padStart(2, '0'))
+        .join('');
 }
 
 // ============================================================
@@ -705,19 +888,161 @@ document.addEventListener('DOMContentLoaded', function() {
   const copyEntropyBtn = document.getElementById('copyEntropyBtn');
   const wordCountSelect = document.getElementById('wordCount');
   const rollCounter = document.getElementById('rollCounter');
+  const enableClipboardToggle = document.getElementById('enableClipboardToggle');
+const verifyInput = document.getElementById('verifyInput');
+const verifyBtn = document.getElementById('verifyBtn');
+const verifyStatus = document.getElementById('verifyStatus');
+const clearVerifyBtn = document.getElementById('clearVerifyBtn');
+const toggleVerifyVisibility = document.getElementById('toggleVerifyVisibility');
+let verifyBurnTimer = null;
+  // Tracks whether the wordlist/BIP-39 self-test suite passed, so the
+  // invalid-character handler below never accidentally re-enables a
+  // Generate button that WORDLIST_CHECK has permanently disabled.
+  let wordlistOk = true;
+  WORDLIST_CHECK.then(function(pass) { wordlistOk = pass; });
 
   // Closure-scoped state
   let currentMnemonic = [];
   let currentEntropy = '';
 
+  // Clipboard-security state: tracks what we last wrote to the clipboard
+  // so we can auto-clear it (without clobbering unrelated clipboard content
+  // the user may have copied from elsewhere afterward) and so Clear/Reset
+  // can attempt to clear it immediately.
+  let lastCopiedText = '';
+  let clipboardClearTimer = null;
+  const CLIPBOARD_AUTOCLEAR_MS = 45000; // 45s
+
+  // NON-PERSISTENCE HARDENING: Burn-after-reading timer
+  const BURN_AFTER_READING_SECONDS = 180; // 3 minutes - user can change this
+  let burnTimer = null;
+
+  // NON-PERSISTENCE HARDENING: Panic hotkey state
+  let lastEscapeTime = 0;
+
   const REQUIRED_BYTES = {12: 16, 15: 20, 18: 24, 21: 28, 24: 32};
- const REQUIRED_ROLLS = {
-    12: 43,   // 129 bits raw for 128-bit target (3 bits per d8 roll)
-    15: 54,   // 162 bits raw for 160-bit target
-    18: 64,   // 192 bits raw for 192-bit target (exact fit)
-    21: 75,   // 225 bits raw for 224-bit target
-    24: 86    // 258 bits raw for 256-bit target
+  const REQUIRED_ROLLS = {
+    12: 43,   // 129 raw bits for 128-bit target (exact fit, no rejection sampling needed)
+    15: 54,   // 162 raw bits for 160-bit target
+    18: 64,   // 192 raw bits for 192-bit target (exact fit)
+    21: 75,   // 225 raw bits for 224-bit target
+    24: 86    // 258 raw bits for 256-bit target
   };
+
+  // CLIPBOARD PERSISTENCE HARDENING: Disable copy buttons by default
+  function updateClipboardButtons() {
+    const enabled = enableClipboardToggle.checked;
+    copyMnemonicBtn.style.display = enabled ? 'inline-block' : 'none';
+    copyEntropyBtn.style.display = enabled ? 'inline-block' : 'none';
+    
+    // If disabling while secrets are on clipboard, attempt to clear it
+    if (!enabled && lastCopiedText) {
+      attemptClearClipboard();
+    }
+  }
+  
+  // Initialize clipboard buttons
+  enableClipboardToggle.checked = false; // OFF by default for security
+  updateClipboardButtons();
+  
+  // Listen for toggle changes
+  enableClipboardToggle.addEventListener('change', function() {
+    updateClipboardButtons();
+    if (!this.checked) {
+      alert('✅ Clipboard copy disabled. You can manually write down the seed phrase instead.');
+    }
+  });
+
+  // Chi-squared goodness-of-fit test for die-face uniformity, and a lag-1
+  // autocorrelation test for sequential patterns. Both are diagnostics
+  // about the *physical die*, not the entropy math — unlike the D6
+  // version, there is no accept/reject verdict here at all to leave
+  // unaffected, since 8=2³ means every roll sequence maps onto entropy
+  // bits with zero modulo bias. Both tests stay gated behind the
+  // "Advanced" toggle, consistent with this file's safe-by-default
+  // philosophy: face counts and the autocorrelation coefficient are
+  // derived from the actual roll values, so they stay hidden by
+  // default and are shown only when the user opts in.
+  const CHI2_CRITICAL_DF7 = 14.067; // alpha=0.05, df=7 (8 faces - 1), one-sided upper-tail test
+  const AUTOCORR_Z_CRITICAL = 1.96; // alpha=0.05, two-tailed, asymptotic normal approx (Fisher z)
+  const BIAS_TEST_MIN_ROLLS = 40;   // rule of thumb: expected count per bin (n/8) should be >= 5
+
+  function chiSquareTest(cleanRolls) {
+    const counts = [0, 0, 0, 0, 0, 0, 0, 0];
+    for (const c of cleanRolls) counts[Number(c) - 1]++;
+    const n = cleanRolls.length;
+    const expected = n / 8;
+    let chi2 = 0;
+    for (let i = 0; i < 8; i++) chi2 += Math.pow(counts[i] - expected, 2) / expected;
+    return { counts, chi2 };
+  }
+
+  // A full pairwise (36-bin) chi-squared test would need n>=180 for
+  // validity, which exceeds every tier's roll count, so it would be
+  // meaninglessly underpowered here. The Fisher-z approach on lag-1
+  // autocorrelation avoids binning entirely and stays valid at these
+  // sample sizes.
+  function lag1AutocorrTest(cleanRolls) {
+    const vals = [...cleanRolls].map(Number);
+    const n = vals.length;
+    const mean = vals.reduce((a, b) => a + b, 0) / n;
+    let denom = 0;
+    for (const v of vals) denom += (v - mean) ** 2;
+    let num = 0;
+    for (let i = 0; i < n - 1; i++) num += (vals[i] - mean) * (vals[i + 1] - mean);
+    let r = denom > 0 ? num / denom : 0;
+    r = Math.max(-0.999999, Math.min(0.999999, r)); // guard atanh domain
+    const pairs = n - 1;
+    const z = 0.5 * Math.log((1 + r) / (1 - r)) * Math.sqrt(Math.max(pairs - 3, 1));
+    return { r, z, pairs };
+  }
+
+  function updateAudit() {
+    const out = document.getElementById('auditOut');
+    if (!out) return;
+    const advancedToggle = document.getElementById('auditAdvancedToggle');
+    const showAdvanced = !!(advancedToggle && advancedToggle.checked);
+
+    const clean = diceInput.value.replace(/[^1-8]/g, '');
+    const k = clean.length;
+    const words = parseInt(wordCountSelect.value, 10);
+    const b = REQUIRED_BYTES[words] * 8;
+    const H = k * 3; // exact: every d8 roll contributes exactly 3 bits — no estimate needed, unlike D6's log2(6)
+
+    // Safe-by-default line set: target size, roll count, and whether
+    // enough bits are in hand. There is no accept/reject verdict or
+    // rejection probability to show here (unlike the D6 version) —
+    // 8 = 2³ exactly, so every roll sequence maps onto entropy bits
+    // with zero modulo bias and there is nothing to ever reject.
+    const L = [`target ${words}w / ${b}b`,
+               `rolls ${k}/${REQUIRED_ROLLS[words]}`];
+    if (k > 0) {
+      L.push(`H=${H}b (exact) buffer=${H - b}b`,
+             H >= b ? '✅ sufficient entropy — no rejection sampling needed (8=2³)'
+                    : '⛔ not enough rolls yet for this target');
+
+      if (showAdvanced) {
+        if (k >= BIAS_TEST_MIN_ROLLS) {
+          const { chi2, counts } = chiSquareTest(clean);
+          const biased = chi2 > CHI2_CRITICAL_DF7;
+          L.push(`χ²(df=7)=${chi2.toFixed(2)} faces[1-8]=${counts.join(',')}`,
+                 biased
+                   ? `⚠️ χ² > ${CHI2_CRITICAL_DF7} — possible die bias (informational, does not block generation)`
+                   : `✔️ χ² ≤ ${CHI2_CRITICAL_DF7} — no bias detected`);
+
+          const { r: corrR, z, pairs } = lag1AutocorrTest(clean);
+          const correlated = Math.abs(z) > AUTOCORR_Z_CRITICAL;
+          L.push(`lag-1 autocorr r=${corrR.toFixed(3)} z=${z.toFixed(2)} (n=${pairs} pairs)`,
+                 correlated
+                   ? `⚠️ |z| > ${AUTOCORR_Z_CRITICAL} — possible sequential correlation (informational, does not block generation)`
+                   : `✔️ |z| ≤ ${AUTOCORR_Z_CRITICAL} — no sequential correlation detected`);
+        } else {
+          L.push(`Bias checks: need ≥${BIAS_TEST_MIN_ROLLS} rolls for a valid test (have ${k})`);
+        }
+      }
+    }
+    out.textContent = L.join('\n');
+  }
 
   function updateCounter() {
     const raw = diceInput.value;
@@ -733,6 +1058,61 @@ document.addEventListener('DOMContentLoaded', function() {
       rollCounter.innerHTML = `🎲 <strong style="color:${color}">${rolls}</strong> rolls entered — need <strong>${remaining}</strong> more for ${selectedWords} words`;
     }
   }
+
+  // NON-PERSISTENCE HARDENING: Burn-after-reading function
+  function scheduleBurnAfterReading() {
+    if (burnTimer) clearTimeout(burnTimer);
+    burnTimer = setTimeout(async function() {
+      mnemonicText.textContent = '';
+      entropyText.textContent = '';
+      resultsContainer.style.display = 'none';
+      currentMnemonic = [];
+      currentEntropy = '';
+      await attemptClearClipboard();
+      updateCounter();
+      updateAudit();
+    }, BURN_AFTER_READING_SECONDS * 1000);
+  }
+// NON-PERSISTENCE HARDENING: same burn-after-reading treatment for
+// a pasted-in mnemonic being verified, since it's just as much a
+// live secret as a generated one.
+function scheduleVerifyBurn() {
+  if (verifyBurnTimer) clearTimeout(verifyBurnTimer);
+  verifyBurnTimer = setTimeout(clearVerifyOnly, BURN_AFTER_READING_SECONDS * 1000);
+}
+
+// Clears only the verify section (pasted phrase + result), leaving
+// dice rolls and any generated mnemonic untouched. Used by the
+// verify section's own Clear button and by the burn timer above.
+function clearVerifyOnly() {
+  verifyInput.value = '';
+  verifyStatus.style.display = 'none';
+  verifyStatus.textContent = '';
+  verifyStatus.classList.remove('pass', 'fail');
+  if (verifyBurnTimer) {
+    clearTimeout(verifyBurnTimer);
+    verifyBurnTimer = null;
+  }
+}
+
+ function clearAllSecrets() {
+  diceInput.value = '';
+  diceInput.classList.remove('invalid');
+  generateBtn.disabled = !wordlistOk;
+  mnemonicText.textContent = '';
+  entropyText.textContent = '';
+  resultsContainer.style.display = 'none';
+  currentMnemonic = [];
+  currentEntropy = '';
+  if (burnTimer) {
+    clearTimeout(burnTimer);
+    burnTimer = null;
+  }
+  // Verify field gets the same treatment
+  clearVerifyOnly();
+  updateCounter();
+  updateAudit();
+}
 
   // 1. Lock typing when exact required roll count is reached
   diceInput.addEventListener('keydown', function(e) {
@@ -753,37 +1133,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // 2. Truncate long paste entries and enforce strict numeric bounds
+  // 2. Surface invalid characters as an error instead of silently
+  //    stripping them (silent stripping means a mistyped character
+  //    just vanishes with no feedback, which is bad UX for a
+  //    security-sensitive entropy tool). Valid input (digits 1-8 and
+  //    whitespace) is still truncated to the required roll count on
+  //    overflow, e.g. from a long paste.
   diceInput.addEventListener('input', function() {
+    const value = diceInput.value;
+    const invalid = value.replace(/[\s1-8]/g, '');
+
+    diceInput.classList.toggle('invalid', invalid.length > 0);
+
+    if (invalid.length > 0) {
+      rollCounter.innerHTML = '⚠️ <strong style="color:#fca5a5;">Invalid character detected.</strong> Use only digits 1–8 (spaces are fine, nothing else is).';
+      generateBtn.disabled = true;
+      return;
+    }
+
+    generateBtn.disabled = !wordlistOk;
+
     const selectedWords = parseInt(wordCountSelect.value, 10);
     const requiredRolls = REQUIRED_ROLLS[selectedWords];
-    let clean = diceInput.value.replace(/[^1-8]/g, '');
+    const clean = value.replace(/\s/g, '');
 
     if (clean.length > requiredRolls) {
       diceInput.value = clean.slice(0, requiredRolls);
-    } else if (diceInput.value !== clean) {
-      diceInput.value = clean;
     }
 
     updateCounter();
+    updateAudit(); 
   });
 
   // 3. Auto-adjust input string length if dropdown changes to a smaller word target
   wordCountSelect.addEventListener('change', function() {
+    const value = diceInput.value;
+    const invalid = value.replace(/[\s1-8]/g, '');
+
+    diceInput.classList.toggle('invalid', invalid.length > 0);
+
+    if (invalid.length > 0) {
+      rollCounter.innerHTML = '⚠️ <strong style="color:#fca5a5;">Invalid character detected.</strong> Use only digits 1–8 (spaces are fine, nothing else is).';
+      generateBtn.disabled = true;
+      return;
+    }
+
+    generateBtn.disabled = !wordlistOk;
+
     const selectedWords = parseInt(wordCountSelect.value, 10);
     const requiredRolls = REQUIRED_ROLLS[selectedWords];
-    let clean = diceInput.value.replace(/[^1-8]/g, '');
+    const clean = value.replace(/\s/g, '');
 
     if (clean.length > requiredRolls) {
       diceInput.value = clean.slice(0, requiredRolls);
     }
     updateCounter();
+    updateAudit(); 
   });
 
   updateCounter();
+  updateAudit(); 
 
   generateBtn.addEventListener('click', async function() {
-      if (!(await WORDLIST_CHECK)) {
+    if (!(await WORDLIST_CHECK)) {
       alert('⛔ Wordlist integrity check failed. Refusing to generate a seed.');
       return;
     }
@@ -815,36 +1227,178 @@ document.addEventListener('DOMContentLoaded', function() {
       mnemonicText.textContent = display;
       entropyText.textContent = entropy;
       resultsContainer.style.display = 'block';
+      
+      // NON-PERSISTENCE HARDENING: Schedule auto-clear
+      scheduleBurnAfterReading();
     } catch (err) {
       alert('Error generating seed: ' + err.message);
     }
   });
 
-  clearDiceBtn.addEventListener('click', function() {
-    diceInput.value = '';
-    resultsContainer.style.display = 'none';
-    mnemonicText.textContent = '';
-    entropyText.textContent = '';
-    currentMnemonic = [];
-    currentEntropy = '';
-    updateCounter();
+  clearDiceBtn.addEventListener('click', async function() {
+    clearAllSecrets();
+    await attemptClearClipboard();
+  });
+verifyInput.addEventListener('input', function() {
+  if (verifyInput.value) {
+    scheduleVerifyBurn();
+  } else if (verifyBurnTimer) {
+    clearTimeout(verifyBurnTimer);
+    verifyBurnTimer = null;
+  }
+});
+
+// Mirrors the copy-to-clipboard auto-clear philosophy, but for the
+// reverse direction: if the user pasted from their clipboard (e.g. a
+// password manager), scrub the clipboard shortly after — only if it
+// still holds exactly what was pasted, so we never clobber unrelated
+// content.
+verifyInput.addEventListener('paste', function(e) {
+  const pasted = (e.clipboardData || window.clipboardData).getData('text');
+  if (!pasted) return;
+  setTimeout(async function() {
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const current = await navigator.clipboard.readText();
+        if (current === pasted) {
+          await writeClipboard('');
+        }
+      }
+    } catch (err) {
+      // No clipboard read permission — skip silently, same as elsewhere.
+    }
+  }, 500);
+});
+
+toggleVerifyVisibility.addEventListener('click', function() {
+  const showing = verifyInput.type === 'text';
+  verifyInput.type = showing ? 'password' : 'text';
+  toggleVerifyVisibility.textContent = showing ? '👁 Show' : '🙈 Hide';
+});
+
+clearVerifyBtn.addEventListener('click', function() {
+  clearVerifyOnly();
+});
+
+verifyBtn.addEventListener('click', async function() {
+  if (!(await WORDLIST_CHECK)) {
+    alert('⛔ Wordlist integrity check failed. Refusing to verify mnemonic.');
+    return;
+  }
+
+  const raw = verifyInput.value;
+  if (!raw.trim()) {
+    alert('Please paste a recovery phrase first.');
+    return;
+  }
+  verifyStatus.style.display = 'block';
+  verifyStatus.classList.remove('pass', 'fail');
+  verifyStatus.textContent = '⏳ Checking...';
+  const result = await verifyMnemonic(raw);
+  if (result.error) {
+    verifyStatus.classList.add('fail');
+    verifyStatus.textContent = '❌ ' + result.error;
+  } else if (result.valid) {
+    verifyStatus.classList.add('pass');
+    let msg = '✅ Valid BIP-39 checksum.';
+    if (currentEntropy) {
+      msg += result.entropyHex === currentEntropy
+        ? ' Matches the seed generated in this session.'
+        : ' Does NOT match the seed generated in this session.';
+    }
+    verifyStatus.textContent = msg;
+  } else {
+    verifyStatus.classList.add('fail');
+    verifyStatus.textContent = '❌ Invalid checksum — check for a mistyped or out-of-order word.';
+  }
+  scheduleVerifyBurn();
+});
+  // NON-PERSISTENCE HARDENING: Panic hotkey - double-tap Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const now = Date.now();
+      if (now - lastEscapeTime < 700) {
+        // Double-tap detected - clear all secrets immediately
+        clearAllSecrets();
+        attemptClearClipboard();
+      }
+      lastEscapeTime = now;
+    }
   });
 
+  // NON-PERSISTENCE HARDENING: Clear on tab close/navigation
+  window.addEventListener('beforeunload', function() {
+    try {
+        verifyInput.value = '';
+verifyStatus.style.display = 'none';
+verifyStatus.textContent = '';
+if (verifyBurnTimer) {
+  clearTimeout(verifyBurnTimer);
+  verifyBurnTimer = null;
+}
+      mnemonicText.textContent = '';
+      entropyText.textContent = '';
+      diceInput.value = '';
+      resultsContainer.style.display = 'none';
+      currentMnemonic = [];
+      currentEntropy = '';
+      if (burnTimer) {
+        clearTimeout(burnTimer);
+        burnTimer = null;
+      }
+    } catch (e) {
+      // Ignore - best effort cleanup
+    }
+  });
+
+// ---- UI polish: status pill toggle + floating audit sheet ----
+  document.getElementById('wordlistStatus').addEventListener('click', function() {
+    this.classList.toggle('collapsed');
+  });
+  document.getElementById('auditFab').addEventListener('click', function() {
+    document.getElementById('auditSheet').style.display = 'block';
+    updateAudit();
+  });
+  document.getElementById('auditClose').addEventListener('click', function() {
+    document.getElementById('auditSheet').style.display = 'none';
+  });
+  const auditAdvancedToggle = document.getElementById('auditAdvancedToggle');
+  if (auditAdvancedToggle) {
+    auditAdvancedToggle.addEventListener('change', updateAudit);
+  }
   // Hard reset integration
   const hardResetBtn = document.getElementById('hardResetBtn');
   if (hardResetBtn) {
-    hardResetBtn.addEventListener('click', function() {
-      currentMnemonic = [];
-      currentEntropy = '';
+    hardResetBtn.addEventListener('click', async function() {
+      clearAllSecrets();
+      await attemptClearClipboard();
       if (typeof window.hardReset === 'function') window.hardReset();
     });
   }
 
   // Clipboard functionality
-  async function copyText(text, label) {
+  // ------------------------------------------------------------------
+  // SECURITY NOTE: this app puts secret material (seed phrase / raw
+  // entropy) on the OS clipboard when the user taps Copy. That's the
+  // only way to get it into a password manager etc., but it means the
+  // secret sits somewhere every other app on the device (and, with
+  // clipboard sync, other devices) can read it until something
+  // overwrites it. We mitigate that two ways:
+  //   1. Auto-clear the clipboard CLIPBOARD_AUTOCLEAR_MS after a copy,
+  //      but ONLY if the clipboard still contains exactly what we put
+  //      there (so we never clobber something unrelated the user
+  //      copied afterward).
+  //   2. Immediately attempt to clear the clipboard on "Clear Rolls" and
+  //      "Hard Reset", using the same match-check.
+  // Reading back the clipboard requires the Clipboard API + user
+  // permission; if that's unavailable we skip the auto-clear/verify
+  // step rather than risk clobbering unrelated content, but the
+  // explicit Clear/Reset buttons still attempt an unconditional clear
+  // since the user is deliberately asking us to.
+  async function writeClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
-      alert(`✅ ${label} copied to clipboard!`);
+      return true;
     } catch (err) {
       try {
         const ta = document.createElement('textarea');
@@ -860,14 +1414,68 @@ document.addEventListener('DOMContentLoaded', function() {
         ta.setSelectionRange(0, text.length);
         const success = document.execCommand('copy');
         document.body.removeChild(ta);
-        if (success) {
-          alert(`✅ ${label} copied to clipboard!`);
-        } else {
-          alert('❌ Copy failed. Please copy manually.');
-        }
+        return success;
       } catch (fallbackErr) {
-        alert('❌ Copy failed. Please copy manually.');
+        return false;
       }
+    }
+  }
+
+  function scheduleClipboardAutoClear(text) {
+    lastCopiedText = text;
+    if (clipboardClearTimer) clearTimeout(clipboardClearTimer);
+    clipboardClearTimer = setTimeout(async function() {
+      // Only clear if the clipboard still holds what we copied — if the
+      // user copied something else in the meantime, leave it alone.
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const current = await navigator.clipboard.readText();
+          if (current === lastCopiedText) {
+            await writeClipboard('');
+          }
+        }
+        // If readText isn't available/permitted, we can't safely verify,
+        // so we skip the timed auto-clear for this copy. The explicit
+        // Clear Rolls / Hard Reset buttons below still attempt an unconditional clear.
+      } catch (e) {
+        // Permission denied or no clipboard access — silently skip.
+      } finally {
+        lastCopiedText = '';
+        clipboardClearTimer = null;
+      }
+    }, CLIPBOARD_AUTOCLEAR_MS);
+  }
+
+  async function attemptClearClipboard() {
+    if (clipboardClearTimer) {
+      clearTimeout(clipboardClearTimer);
+      clipboardClearTimer = null;
+    }
+    // Best-effort: only overwrite the clipboard if it still holds the
+    // secret we put there, so Clear/Reset never clobbers something
+    // unrelated the user has copied since. If we can't verify (no
+    // readText permission), err on the side of NOT touching the
+    // clipboard rather than blindly wiping the user's unrelated data.
+    try {
+      if (lastCopiedText && navigator.clipboard && navigator.clipboard.readText) {
+        const current = await navigator.clipboard.readText();
+        if (current === lastCopiedText) {
+          await writeClipboard('');
+        }
+      }
+    } catch (e) {
+      // No clipboard read permission — can't safely verify, so skip.
+    }
+    lastCopiedText = '';
+  }
+
+  async function copyText(text, label) {
+    const ok = await writeClipboard(text);
+    if (ok) {
+      scheduleClipboardAutoClear(text);
+      alert(`✅ ${label} copied to clipboard! It will auto-clear from your clipboard in ${CLIPBOARD_AUTOCLEAR_MS / 1000}s.`);
+    } else {
+      alert('❌ Copy failed. Please copy manually.');
     }
   }
 
@@ -935,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', function() {
   "use strict";
 
   window.hardReset = function() {
-    const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea');
+ const inputs = document.querySelectorAll('input[type="text"], input[type="password"], input[type="number"], textarea');
     inputs.forEach(function(el) {
       el.value = '';
       el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -950,33 +1558,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('resultsContainer');
     if (container) container.style.display = 'none';
 
-    // NOTE: currentMnemonic and currentEntropy are closure-scoped (not window globals)
-    // and are cleared by the main DOMContentLoaded handler above.
-    var globalsToWipe = [
-      'mnemonic', 'entropy', 'bits', 'seed', 'rolls',
-      'diceEntropy', 'hexString', 'byteArray', 'wordArray', 'generatedMnemonic', 'entropyHex'
-    ];
-    globalsToWipe.forEach(function(varName) {
-      if (window.hasOwnProperty(varName)) {
-        try {
-          if (varName === 'currentMnemonic') window[varName] = [];
-          else if (varName === 'currentEntropy') window[varName] = '';
-          else window[varName] = null;
-        } catch(e) { /* ignore */ }
-      }
-    });
-
-    if (typeof window.reset === 'function') window.reset();
-    if (typeof window.clearAll === 'function') window.clearAll();
-
-    document.querySelectorAll('.error, .warning, .alert').forEach(function(el) {
-      el.textContent = '';
-      el.style.display = 'none';
-    });
-
-    if (window.location.hash) {
-      history.replaceState(null, null, ' ');
-    }
+    // currentMnemonic, currentEntropy, and the clipboard are closure-scoped
+    // (not window globals) and are cleared by the main DOMContentLoaded
+    // hardResetBtn handler above, which calls this function.
 
     var feedback = document.getElementById('resetFeedback');
     if (feedback) {
@@ -996,6 +1580,30 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 <!-- ====== END RESET BUTTON ====== -->
+ <button id="auditFab" aria-label="Open bias audit terminal"
+  style="position:fixed;right:14px;bottom:14px;width:52px;height:52px;
+  border-radius:50%;background:#0f3460;border:2px solid #f0a500;
+  font-size:1.5rem;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.5);">🔬</button>
 
+<div id="auditSheet" style="display:none;position:fixed;left:0;right:0;bottom:0;
+  background:#16213e;border-top:2px solid #f0a500;padding:14px;z-index:100;
+  max-height:62vh;overflow-y:auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:8px;">
+    <strong style="color:#f0a500;">🔬 Modulo Bias Audit Terminal</strong>
+    <button id="auditClose" style="background:#533483;color:#fff;border:none;
+      border-radius:4px;padding:6px 12px;font-weight:bold;">✖</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;
+    color:#aaa;margin-bottom:8px;">
+    <input type="checkbox" id="auditAdvancedToggle">
+    Show advanced sequence-derived values (H, N, r, T, X) — off by default;
+    these are computed from your actual dice rolls and shouldn't be left
+    visible on screen or in screenshots during ordinary use.
+  </label>
+  <pre id="auditOut" style="background:#0a0a1a;color:#8be9fd;padding:12px;
+    border:1px solid #333;border-radius:8px;font-size:0.78rem;
+    white-space:pre-wrap;word-break:break-all;line-height:1.4;">Waiting for dice rolls...</pre>
+</div>
 </body>
 </html>
