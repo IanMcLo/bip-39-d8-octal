@@ -53,7 +53,8 @@ A single, self-contained HTML file that converts d8 dice rolls into BIP39 mnemon
 * **Copy-to-clipboard** – for both the mnemonic and raw entropy hex.
 * **Hard reset button** – wipes DOM state and nullifies closure-scoped JavaScript variables.
 * **Dark mode UI** – clean contrast designed for long dice-rolling sessions.
-
+* **Mnemonic verification** – paste an existing recovery phrase to check its BIP-39 checksum, protected by the same non-persistence hardening as the generator (auto-clear, clipboard scrub on paste, panic hotkey, Hard Reset coverage).
+* **Advanced audit diagnostics** – optional chi-square (df=7) and lag-1 autocorrelation tests on your entered rolls, to flag possible physical die bias. Informational only; never blocks generation.
 ---
 
 ## ⚙️ How It Works
